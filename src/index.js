@@ -1,84 +1,91 @@
+
 import './css/styles.css';
-import debounce from 'lodash.debounce';
-import {fetchCountries} from './fetchCountries.js';
 import Notiflix from 'notiflix';
+import debounce from 'lodash.debounce';
+import { fetchCountries } from './fetchCountries.js';
 const DEBOUNCE_DELAY = 300;
 
-
 const refs = {
-countryInfo: document.querySelector('.country-info'),
-searchBox: document.querySelector('#search-box'),
-countryList: document.querySelector('.country-list'),
+  countryInfo: document.querySelector('.country-info'),
+  searchBox: document.querySelector('#search-box'),
+  countryList: document.querySelector('.country-list'),
 };
 
-function onSearchCountry(e){
+function onSearchCountry(e) {
   e.preventDefault();
   const inputValue = e.target.value.trim();
 
-
-  if(!inputValue){
+  if (!inputValue) {
     resetMarkup(refs.countryList);
     resetMarkup(refs.countryInfo);
     return;
   }
-
   fetchCountries(inputValue)
-  .then(renderCounter)
-  .catch(onNowCountry);
+    .then(renderCounter)
+    .catch(onNowCoutry);
+}
+refs.searchBox.addEventListener(
+  'input',
+  debounce(onSearchCountry, DEBOUNCE_DELAY)
+);
+
+// svg прапор
+// official
+
+function createMarkupCountryList(dataCountry) {
+  const markup = dataCountry
+    .map(({ name, flags }) => {
+      return `
+    <li>
+    <img src="${flags.svg}" alt="flags"/>
+    <p>${name.official}</p>
+    </li>
+    `;
+    })
+    .join('');
+  return refs.countryList.insertAdjacentHTML('beforeend', markup);
 }
 
-refs.searchBox.addEventListener('input', debounce(onSearchCountry, DEBOUNCE_DELAY));
-
-function createMarkupCountryList(dataCountry){
-  const markup = dataCountry.map(({name,flags}) => {
-    return ` <li>
-    <img src = "${flags.svg}" alt="flags"/>
-    <p> ${name.official} </p>
-    </li>`;
-  }) .join("");
-  return refs.countryList.insertAdjacentHTML('beforeend' , markup);
-}
-
-function createMarkupCountryInfo(dataCountry){
-  const markup = dataCountry.map(({name,capital,population,flags,languages}) => {
-return
-`
+function createMarkupCountryInfo(dataCountry) {
+  const markup = dataCountry.map(
+    ({ name, capital, population, flags, languages }) => {
+      return `
 <div class="country-card">
-           <img src="${flags.svg}" alt="Flag"width="200">
-           <div class="country-card-info">
-             <h2>${name.official}</h2>
-             <p><strong>Capital:</strong> ${capital}</p>
-             <p><strong>Population:</strong> ${population}</p>
-             <p>${Object.values(languages).join(',')}</p>
-           </div>
-         </div>
+        <img src="${flags.svg}" alt="Flag" width="200">
+
+          <div class="country-card-info">
+            <h2>${name.official}</h2>
+            <p><strong>Capital:</strong> ${capital}</p>
+            <p><strong>Population:</strong> ${population}</p>
+            <p>${Object.values(languages).join(', ')}</p>
+          </div>
+        </div>
 `;
-  }).join('');
-  return refs.countryInfo.insertAdjacentHTML('beforeend' , markup)
+    }
+  ).join('');
+  return refs.countryInfo.insertAdjacentHTML('beforeend', markup)
 }
 
-function renderCounter(dataCountry){
-if(dataCountry.lenght > 10){
-  Notiflix.Notify.info(`Too many matches found. Please enter a more specific name.`)
 
-} else if(dataCountry.length >= 2 && dataCountry.length <= 10){
-  resetMarkup(refs.countryList);
-  createMarkupCountryList(dataCountry)
+function renderCounter(dataCountry) {
+  if(dataCountry.length > 10){
+    Notiflix.Notify.info(`Too many matches found. Please enter a more specific name.`)
+  } else if(dataCountry.length >= 2 && dataCountry.length <= 10){
+    resetMarkup(refs.countryList);
+    createMarkupCountryList(dataCountry)
+    resetMarkup(refs.countryInfo);
+  } else{
+    resetMarkup(refs.countryInfo);
+    createMarkupCountryInfo(dataCountry)
+    resetMarkup(refs.countryList);
+  }
+}
+
+function onNowCoutry(){
   resetMarkup(refs.countryInfo);
-} else{
-  resetMarkup(refs.countryInfo);
-  createMarkupCountryInfo(dataCountry)
-  resetMarkup(refs.countryList);
+    resetMarkup(refs.countryList);
+    Notiflix.Notify.failure(`Oops, there is no country with that name`)
 }
-}
-
-function onNowCountry(){
-  resetMarkup(refs.countryInfo);
-  resetMarkup(refs.countryList);
-  Notiflix.Notify.failure(`Oops, there is no country with that name`)
-
-}
-
 function resetMarkup(e){
   e.innerHTML = ''
 }
